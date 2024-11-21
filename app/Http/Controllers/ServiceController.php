@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Service;
-use App\Models\Availability;
+use App\Models\Availability; // Asegúrate de que este modelo esté importado
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -11,24 +11,26 @@ class ServiceController extends Controller
 {
     public function store(Request $request)
     {
+        \Log::info($request->all()); // Log all incoming data
+    
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'image' => 'required|image',
-            'working_days' => 'array|nullable', // Deberías validar si el array no está vacío si es necesario
-            'working_hours_start' => 'required|date_format:H:i',
-            'working_hours_end' => 'required|date_format:H:i',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'working_days' => 'required|array',
+            'working_days.*' => 'string|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'working_hours_start' => 'required|string',
+            'working_hours_end' => 'required|string',
             'reservation_intervals' => 'required|date_format:H:i',
             'price' => 'required|numeric|min:0',
         ]);
-        
+    
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('services', 'public');
         } else {
             return redirect()->back()->with('error', 'La imagen es obligatoria.');
         }
     
-        // Crear el servicio con los datos validados
         $service = Service::create([
             'name' => $validatedData['name'],
             'description' => $validatedData['description'],
@@ -47,26 +49,37 @@ class ServiceController extends Controller
         return redirect()->route('services.index')->with('success', 'Servicio creado con éxito.');
     }
     
-    public function createAvailabilitySlots($service, $validatedData)
+    public function createAvailabilitySlots($service)
     {
-        // Asegurarse de que las horas de trabajo son instancias de Carbon
+        // Ensure that working hours are valid Carbon instances
         $start = Carbon::createFromFormat('H:i', $service->working_hours_start);
         $end = Carbon::createFromFormat('H:i', $service->working_hours_end);
     
-        // Calcular el intervalo (en minutos) entre los slots de reserva
+        // Log the start and end times for debugging
+        \Log::info('Start Time: ' . $start->format('H:i'));
+        \Log::info('End Time: ' . $end->format('H:i'));
+    
+        // Calculate the interval (in minutes) between reservation slots
         $interval = Carbon::createFromFormat('H:i', $service->reservation_intervals)
                         ->diffInMinutes(Carbon::createFromFormat('H:i', '00:00'));
     
-        // Calcular la cantidad de slots
+        \Log::info('Interval (in minutes): ' . $interval);
+    
+        // Calculate the number of slots
         $numberOfSlots = $start->diffInMinutes($end) / $interval;
     
-        // Iterar sobre los días de trabajo y crear los intervalos de disponibilidad
+        // Now iterate over the working days and create the availability slots
         foreach (json_decode($service->working_days) as $day) {
+            \Log::info('Working Day: ' . $day);
+    
             for ($i = 0; $i <= $numberOfSlots; $i++) {
                 $slotTime = clone $start;
                 $slotTime->addMinutes($i * $interval);
                 if ($slotTime->lt($end)) {
-                    // Crear el registro de disponibilidad
+                    // Log the available slots for debugging
+                    \Log::info('Available Slot: ' . $slotTime->format('H:i'));
+    
+                    // Create availability record
                     Availability::create([
                         'service_id' => $service->id,
                         'availability_date' => Carbon::parse($day)->format('Y-m-d'),

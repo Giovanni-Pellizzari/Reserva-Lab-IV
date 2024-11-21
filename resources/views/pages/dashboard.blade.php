@@ -22,19 +22,18 @@
                 <label for="image">Imagen</label>
                 <input type="file" class="form-control-file" id="image" name="image" accept="image/*" required>
             </div>
-
-            <!-- Días de trabajo (checkboxes) -->
             <div class="form-group">
-                <label>Días de Trabajo</label><br>
-                <input type="checkbox" name="working_days[]" value="Lunes"> Lunes<br>
-                <input type="checkbox" name="working_days[]" value="Martes"> Martes<br>
-                <input type="checkbox" name="working_days[]" value="Miércoles"> Miércoles<br>
-                <input type="checkbox" name="working_days[]" value="Jueves"> Jueves<br>
-                <input type="checkbox" name="working_days[]" value="Viernes"> Viernes<br>
-                <input type="checkbox" name="working_days[]" value="Sábado"> Sábado<br>
-                <input type="checkbox" name="working_days[]" value="Domingo"> Domingo<br>
+                <label for="working_days">Días de Trabajo</label>
+                <select multiple class="form-control" id="working_days" name="working_days[]" required>
+                    <option value="Lunes">Lunes</option>
+                    <option value="Martes">Martes</option>
+                    <option value="Miércoles">Miércoles</option>
+                    <option value="Jueves">Jueves</option>
+                    <option value="Viernes">Viernes</option>
+                    <option value="Sábado">Sábado</option>
+                    <option value="Domingo">Domingo</option>
+                </select>
             </div>
-
             <div class="form-group">
                 <label for="working_hours_start">Horario de Inicio</label>
                 <input type="time" class="form-control" id="working_hours_start" name="working_hours_start" required>

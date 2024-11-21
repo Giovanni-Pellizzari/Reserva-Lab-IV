@@ -5,17 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Notifications\ReservaStatusNotification;
+use Illuminate\Support\Facades\Notification;
 
 class Reserva extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'service_id',
-        'reservation_date',
-        'start_time',
-        'status',
+        'user_id', 'service_id', 'reserva_date', 'status', 'is_notified', 'notified_at'
     ];
 
     // Relación con el usuario
@@ -45,10 +42,8 @@ class Reserva extends Model
     // Método para enviar la notificación
     public function sendNotification()
     {
-        // Verifica si ya se envió la notificación
         if ($this->is_notified === false) {
             $this->user->notify(new ReservaStatusNotification($this));
-            $this->user->notify(new ReservaCreada($this));
             $this->is_notified = true;
             $this->notified_at = now();
             $this->save();
