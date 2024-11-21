@@ -45,7 +45,6 @@ class ReservaController extends Controller
     
         return view('reservas.create', compact('servicios', 'availableSlots'));
     }
-    
 
     public function store(Request $request)
     {
@@ -125,7 +124,4 @@ class ReservaController extends Controller
     
         return response()->json($availableSlots);
     }
-    
-
 }
-
