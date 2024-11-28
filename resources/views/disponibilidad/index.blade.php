@@ -23,15 +23,13 @@
                     <tr>
                         <td>{{ $reserva->user->name }}</td>
                         <td>{{ $reserva->service->name }}</td>
-                        <td>{{ $reserva->reservation_date }}</td>
-                        <td>{{ $reserva->start_time }}</td>
-                        <td>{{ $reserva->end_time }}</td>
+                        <td>{{ \Carbon\Carbon::parse($reserva->reservation_date)->format('d/m/Y') }}</td> <!-- Fecha formateada -->
+                        <td>{{ \Carbon\Carbon::parse($reserva->start_time)->format('H:i') }}hs</td> <!-- Hora de inicio formateada -->
+                        <td>{{ \Carbon\Carbon::parse($reserva->end_time)->format('H:i') }}hs</td> <!-- Hora de finalización formateada -->
                     </tr>
                 @endforeach
             </tbody>
         </table>
     @endif
 </div>
-
-
 @endsection
