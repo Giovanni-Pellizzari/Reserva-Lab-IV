@@ -4,6 +4,12 @@
 
 @section('content')
 <div class="container py-5">
+@if (session('status'))
+    <div class="alert alert-success">
+        {{ session('status') }}
+    </div>
+@endif
+
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card bg-greytext-white">

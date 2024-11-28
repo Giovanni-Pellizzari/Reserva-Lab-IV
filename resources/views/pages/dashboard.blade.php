@@ -3,7 +3,7 @@
 @section('content')
 <div class="container">
     <h1 class="text-center">Bienvenido al Dashboard</h1>
-    <p class="text-center">Administra tus reservas aquí.</p>
+    <p class="text-center">Crea un servicio Aqui!</p>
 
     <!-- Formulario para crear un nuevo servicio -->
     <div class="mb-4">
@@ -15,24 +15,45 @@
                 <input type="text" class="form-control" id="name" name="name" required>
             </div>
             <div class="form-group">
-                <label for="description">Descripción</label>
-                <textarea class="form-control" id="description" name="description" required></textarea>
-            </div>
+    <label for="description">Descripción</label>
+    <textarea class="form-control" id="description" name="description" required></textarea>
+
+</div>
+
             <div class="form-group">
                 <label for="image">Imagen</label>
                 <input type="file" class="form-control-file" id="image" name="image" accept="image/*" required>
             </div>
             <div class="form-group">
-                <label for="working_days">Días de Trabajo</label>
-                <select multiple class="form-control" id="working_days" name="working_days[]" required>
-                    <option value="Lunes">Lunes</option>
-                    <option value="Martes">Martes</option>
-                    <option value="Miércoles">Miércoles</option>
-                    <option value="Jueves">Jueves</option>
-                    <option value="Viernes">Viernes</option>
-                    <option value="Sábado">Sábado</option>
-                    <option value="Domingo">Domingo</option>
-                </select>
+                <label for="working_days">Días de Trabajo</label><br>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" id="lunes" name="working_days[]" value="Lunes">
+                    <label class="form-check-label" for="lunes">Lunes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" id="martes" name="working_days[]" value="Martes">
+                    <label class="form-check-label" for="martes">Martes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" id="miercoles" name="working_days[]" value="Miércoles">
+                    <label class="form-check-label" for="miercoles">Miércoles</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" id="jueves" name="working_days[]" value="Jueves">
+                    <label class="form-check-label" for="jueves">Jueves</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" id="viernes" name="working_days[]" value="Viernes">
+                    <label class="form-check-label" for="viernes">Viernes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" id="sabado" name="working_days[]" value="Sábado">
+                    <label class="form-check-label" for="sabado">Sábado</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" id="domingo" name="working_days[]" value="Domingo">
+                    <label class="form-check-label" for="domingo">Domingo</label>
+                </div>
             </div>
             <div class="form-group">
                 <label for="working_hours_start">Horario de Inicio</label>

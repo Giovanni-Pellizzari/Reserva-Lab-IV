@@ -24,23 +24,7 @@
                         </div>
 
                         <!-- Modal para la Descripción -->
-                        <div class="modal fade" id="serviceModal{{ $service->id }}" tabindex="-1" aria-labelledby="serviceModalLabel{{ $service->id }}" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="serviceModalLabel{{ $service->id }}">{{ $service->name }}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p>{{ $service->description }}</p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-<!-- Modal para Reservar -->
+                        <!-- Modal para Reservar -->
 <div class="modal fade" id="reservationModal{{ $service->id }}" tabindex="-1" aria-labelledby="reservationModalLabel{{ $service->id }}" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -62,51 +46,53 @@
     <label for="reservation_time">Hora de Reserva</label>
     <select class="form-control" id="reservation_time" name="reservation_time" required>
         <option value="">Seleccione una hora</option>
+        <!-- Aquí deberías cargar dinámicamente las opciones según las disponibilidades -->
     </select>
 </div>
 
-                
-                                            <!-- Precio del Servicio (funciona) -->
-                                            <div class="form-group mt-3">
-                                                <label>Precio del Servicio: </label>
-                                                <p>${{ number_format($service->price, 2) }}</p>
-                                            </div>
 
-                                            <!-- Método de Pago -->
-                                            <div class="form-group mt-3">
-                                                <label for="payment_method">Método de Pago</label>
-                                                <select class="form-control" id="payment_method" name="payment_method" required>
-                                                    <option value="">Selecciona un método de pago</option>
-                                                    <option value="credit_card">Tarjeta de Crédito</option>
-                                                    <option value="debit_card">Tarjeta de Débito</option>
-                                                </select>
-                                            </div>
+                    <!-- Precio del Servicio (funciona) -->
+                    <div class="form-group mt-3">
+                        <label>Precio del Servicio: </label>
+                        <p>${{ number_format($service->price, 2) }}</p>
+                    </div>
 
-                                            <!-- Información de Tarjeta (se muestra si se selecciona un método de pago pero faltan detalles) -->
-                                            <div id="paymentDetails" class="mt-3" style="display: none;">
-                                                <div class="form-group">
-                                                    <label for="card_number">Número de Tarjeta</label>
-                                                    <input type="text" class="form-control" id="card_number" name="card_number" pattern="\d{16}" placeholder="0000 0000 0000 0000" required>
-                                                </div>
-                                                <div class="form-group mt-2">
-                                                    <label for="expiry_date">Fecha de Expiración</label>
-                                                    <input type="month" class="form-control" id="expiry_date" name="expiry_date" required>
-                                                </div>
-                                                <div class="form-group mt-2">
-                                                    <label for="cvv">CVV</label>
-                                                    <input type="text" class="form-control" id="cvv" name="cvv" pattern="\d{3}" placeholder="123" required>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                            <button type="submit" class="btn btn-primary">Reservar y Pagar</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                    <!-- Método de Pago -->
+                    <div class="form-group mt-3">
+                        <label for="payment_method">Método de Pago</label>
+                        <select class="form-control" id="payment_method" name="payment_method" required>
+                            <option value="">Selecciona un método de pago</option>
+                            <option value="credit_card">Tarjeta de Crédito</option>
+                            <option value="debit_card">Tarjeta de Débito</option>
+                        </select>
+                    </div>
+
+                    <!-- Información de Tarjeta (se muestra si se selecciona un método de pago pero faltan detalles) -->
+                    <div id="paymentDetails" class="mt-3" style="display: none;">
+                        <div class="form-group">
+                            <label for="card_number">Número de Tarjeta</label>
+                            <input type="text" class="form-control" id="card_number" name="card_number" maxlength="19" placeholder="0000 0000 0000 0000" required>
                         </div>
+                        <div class="form-group mt-2">
+                            <label for="expiry_date">Fecha de Expiración</label>
+                            <input type="month" class="form-control" id="expiry_date" name="expiry_date" required>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label for="cvv">CVV</label>
+                            <input type="text" class="form-control" id="cvv" name="cvv" pattern="\d{3}" placeholder="123" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Reservar y Pagar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
                     </div>
                 @endforeach
             @endif
@@ -124,6 +110,31 @@
                     paymentDetails.style.display = 'none';
                 }
             });
+        });
+
+        // Espaciado automático y limitación de caracteres para el número de tarjeta
+        document.getElementById('card_number').addEventListener('input', function(event) {
+            let input = event.target.value;
+            
+            // Eliminar todo lo que no sea un número
+            input = input.replace(/\D/g, '');
+            
+            // Limitar a 16 caracteres
+            if (input.length > 16) {
+                input = input.slice(0, 16);
+            }
+            
+            // Agregar espacio cada 4 dígitos
+            let formattedInput = '';
+            for (let i = 0; i < input.length; i++) {
+                formattedInput += input[i];
+                if ((i + 1) % 4 === 0 && i + 1 !== input.length) {
+                    formattedInput += ' ';
+                }
+            }
+            
+            // Actualizar el campo de entrada con el texto formateado
+            event.target.value = formattedInput;
         });
     </script>
 
@@ -170,7 +181,6 @@
     });
 </script>
 
-    
     <style>
         body {
         background-color: rgb(72, 61, 139); 
@@ -190,44 +200,37 @@
             border: none;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s;
-            border: 2px solid rgb(72, 61, 139);
-            background-color: #0d0d0d;
+            transition: transform 0.3s ease-in-out;
         }
 
         .card:hover {
-            transform: scale(1.05);
-        }
-
-        .card-img-top {
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+            transform: translateY(-10px);
         }
 
         .card-body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .btn {
-            width: 100%;
-            margin-bottom: 10px; 
-        }
-
-        .modal-content {
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
         }
 
         .modal-header {
-            border-bottom: 2px solid #007bff;
+            background-color: rgb(72, 61, 139);
+            color: white;
         }
 
-        .modal-footer {
-            border-top: 2px solid #007bff;
+        .btn-primary {
+            background-color: rgb(72, 61, 139);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #4e3f85;
+        }
+
+        .modal-footer .btn-secondary {
+            background-color: #f8f9fa;
+        }
+
+        .modal-footer .btn-secondary:hover {
+            background-color: #e2e6ea;
         }
     </style>
-
-
 @endsection

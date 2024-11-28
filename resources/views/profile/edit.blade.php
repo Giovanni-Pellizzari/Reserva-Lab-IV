@@ -55,21 +55,24 @@
             </div>
             <form method="POST" action="{{ route('password.update') }}">
                 @csrf
+                @method('PUT')
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Nueva Contraseña</label>
-                        <input type="password" name="password" id="password" required class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label for="password_confirmation" class="form-label">Confirmar Nueva Contraseña</label>
-                        <input type="password" name="password_confirmation" id="password_confirmation" required class="form-control">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
-                </div>
-            </form>
+            <div class="mb-3">
+<label for="password" class="form-label">Nueva Contraseña</label>
+            <input type="password" name="password" id="password" required class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="password_confirmation" class="form-label">Confirmar Nueva Contraseña</label>
+            <input type="password" name="password_confirmation" id="password_confirmation" required class="form-control">
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+    </div>
+</form>
+
+
         </div>
     </div>
 </div>

@@ -13,7 +13,9 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Usuario que realiza la reserva
             $table->foreignId('service_id')->constrained('services')->onDelete('cascade'); // Servicio reservado
             $table->date('reservation_date'); // Fecha de la reserva
-            $table->time('start_time'); // Hora de inicio de la reserva
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable(); // Columna para la hora de fin de la reserva
+            $table->date('end_date')->nullable(); // Columna para la fecha de fin de la reserva
             $table->boolean('is_notified')->default(false);
             $table->timestamp('notified_at')->nullable();
             $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');

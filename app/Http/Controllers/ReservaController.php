@@ -3,56 +3,63 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reserva;
-use App\Models\Service; 
+use App\Models\Service;
 use App\Models\Availability;
-use Carbon\Carbon; 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ReservaController extends Controller
 {
     public function index()
     {
-        // Obtener reservas del usuario autenticado
+        // Obtener las reservas del usuario autenticado
         $reservas = Reserva::where('user_id', auth()->id())->get();
+
+        // Formatear la hora de cada reserva antes de enviarla a la vista
+        foreach ($reservas as $reserva) {
+            $reserva->start_time = Carbon::parse($reserva->start_time)->format('H:i') . 'hs';
+            $reserva->end_time = Carbon::parse($reserva->end_time)->format('H:i') . 'hs';
+        }
+
+        // Pasar las reservas formateadas a la vista
         return view('reservas.index', compact('reservas'));
     }
 
+    // Mostrar formulario de creación de una nueva reserva
     public function create()
     {
-        // Obtener todos los servicios para el formulario de creación
-        $servicios = Service::all(); 
-        $availableSlots = []; // Inicializa el array de slots disponibles
-    
+        $servicios = Service::all();
+        $availableSlots = [];
+
+        // Obtener los horarios disponibles para cada servicio
         foreach ($servicios as $service) {
-            $startTime = Carbon::createFromFormat('H:i:s', $service->working_hours_start);
-            $endTime = Carbon::createFromFormat('H:i:s', $service->working_hours_end);
-            $interval = Carbon::createFromFormat('H:i:s', $service->reservation_intervals);
-    
-            // Calcular los slots disponibles según el horario de trabajo y el intervalo de reserva
-            for ($time = $startTime; $time->lt($endTime); $time->addHours($interval->hour)->addMinutes($interval->minute)) {
-                // Verificar si el turno está disponible en la tabla Availability
-                $isAvailable = Availability::where('service_id', $service->id)
-                    ->where('availability_date', now()->toDateString())
-                    ->where('start_time', $time->format('H:i:s'))
-                    ->where('is_available', true)
-                    ->exists();
-    
-                if ($isAvailable) {
-                    $availableSlots[$service->id][] = $time->format('H:i');
-                }
-            }
+            $availableSlots[$service->id] = $this->getServiceSlotsForToday($service);
         }
-    
+
         return view('reservas.create', compact('servicios', 'availableSlots'));
     }
-    
 
     public function store(Request $request)
     {
-        // Verificar disponibilidad del turno seleccionado en la tabla Availability
-        $availability = Availability::where('service_id', $request->service_id)
-            ->where('availability_date', $request->reservation_date)
-            ->where('start_time', $request->reservation_time) 
+        // Validar los datos antes de guardar
+        $validated = $request->validate([
+            'service_id' => 'required|exists:services,id',
+            'reservation_date' => 'required|date',
+            'reservation_time' => 'required|date_format:H:i',  // Cambié de start_time a reservation_time
+        ]);
+
+        // Convertir reservation_time (reservation_time) en un objeto Carbon para manipularlo
+        $startTime = Carbon::createFromFormat('H:i', $validated['reservation_time']);
+        $endTime = $startTime->copy()->addHour(); // Añadir una hora de duración
+
+        // Depurar: Verificar que las fechas y horas están correctamente formateadas
+        \Log::info("Start Time: " . $startTime->toDateTimeString());
+        \Log::info("End Time: " . $endTime->toDateTimeString());
+
+        // Verificar disponibilidad del turno seleccionado
+        $availability = Availability::where('service_id', $validated['service_id'])
+            ->where('availability_date', $validated['reservation_date']) // Usamos availability_date
+            ->where('start_time', $validated['reservation_time']) // Usamos reservation_time
             ->where('is_available', true)
             ->first();
 
@@ -64,27 +71,123 @@ class ReservaController extends Controller
         $availability->is_available = false;
         $availability->save();
 
-        // Crear la reserva
-        Reserva::create([
+        // Depurar: Verificar que el cambio en Availability fue exitoso
+        \Log::info("Availability updated: " . $availability->toJson());
+
+        // Crear la reserva con el campo end_time
+        $reserva = Reserva::create([
             'user_id' => auth()->id(),
-            'service_id' => $request->service_id,
-            'reservation_date' => $request->reservation_date,
-            'start_time' => $request->reservation_time,
+            'service_id' => $validated['service_id'],
+            'reservation_date' => $validated['reservation_date'], // Usamos reservation_date
+            'start_time' => $validated['reservation_time'], // Usamos reservation_time
+            'end_time' => $endTime->format('H:i'), // Guardar la hora de finalización
             'status' => 'confirmed',
+            'is_notified' => false,
         ]);
 
-        // Lógica de notificación aquí (si es necesario)
+        // Depurar: Verificar que la reserva se ha creado
+        \Log::info("Reserva creada: " . $reserva->toJson());
 
-        return redirect()->route('dashboard')->with('success', 'Reserva creada con éxito');
+        // Notificar al usuario
+        $reserva->sendNotification();
+
+        return redirect()->route('reservas.index')->with('success', 'Reserva creada con éxito');
     }
 
-    public function cancel(Reserva $reserva)
-    {
-        // Cambiar el estado de la reserva a cancelado
-        $reserva->status = 'cancelled';
-        $reserva->save();
+    public function edit($id)
+{
+    // Encuentra la reserva por el ID
+    $reserva = Reserva::findOrFail($id);
 
-        // Liberar el turno en la tabla Availability
+    // Obtener los servicios que el usuario ha reservado previamente
+    $servicios = Service::whereIn('id', function ($query) use ($reserva) {
+        $query->select('service_id')
+            ->from('reservas')
+            ->where('user_id', auth()->id())
+            ->where('status', 'confirmed'); // Solo servicios confirmados
+    })->get();
+
+    // Obtener los horarios disponibles para el servicio seleccionado en la reserva
+    $availableSlots = $this->getAvailableSlotsForServiceAndDate($reserva->service_id, $reserva->reservation_date);
+
+    // Pasa tanto la reserva, los servicios y los horarios disponibles a la vista
+    return view('reservas.edit', compact('reserva', 'servicios', 'availableSlots'));
+}
+
+// Obtener los turnos disponibles para un servicio y una fecha
+private function getAvailableSlotsForServiceAndDate($serviceId, $reservationDate)
+{
+    // Obtener los horarios disponibles para ese servicio y fecha
+    $availabilities = Availability::where('service_id', $serviceId)
+        ->where('availability_date', $reservationDate)
+        ->where('is_available', true)
+        ->get();
+
+    // Obtener los horarios ocupados por reservas
+    $occupiedSlots = Reserva::where('service_id', $serviceId)
+        ->where('reservation_date', $reservationDate)
+        ->pluck('start_time')
+        ->toArray();
+
+    // Filtrar horarios disponibles
+    $availableSlots = $availabilities->filter(function ($availability) use ($occupiedSlots) {
+        return !in_array($availability->start_time, $occupiedSlots);
+    })->map(function ($availability) {
+        return $availability->start_time;
+    });
+
+    return $availableSlots;
+}
+
+
+public function update(Request $request, $id)
+{
+    // Encuentra la reserva por el ID
+    $reserva = Reserva::findOrFail($id);
+
+    // Validar los datos antes de actualizar
+    $validated = $request->validate([
+        'reservation_date' => 'required|date',
+        'reservation_time' => 'required|date_format:H:i',
+    ]);
+
+    // Verificar disponibilidad del nuevo horario
+    $startTime = Carbon::createFromFormat('H:i', $validated['reservation_time']);
+    $availability = Availability::where('service_id', $reserva->service_id)
+        ->where('availability_date', $validated['reservation_date'])
+        ->where('start_time', $validated['reservation_time'])
+        ->where('is_available', true)
+        ->first();
+
+    if (!$availability) {
+        return back()->with('error', 'El turno no está disponible.');
+    }
+
+    // Actualizar la reserva con los nuevos datos
+    $endTime = $startTime->copy()->addHour(); // Añadir una hora de duración
+    $reserva->update([
+        'reservation_date' => $validated['reservation_date'],
+        'start_time' => $validated['reservation_time'],
+        'end_time' => $endTime->format('H:i'),
+        'status' => 'confirmed', // Estado actualizado a 'confirmed'
+    ]);
+
+    // Marcar el nuevo turno como ocupado
+    $availability->is_available = false;
+    $availability->save();
+
+    return redirect()->route('reservas.index')->with('success', 'Reserva actualizada y confirmada con éxito');
+}
+
+
+    public function destroy($id)
+    {
+        $reserva = Reserva::findOrFail($id);
+
+        // Eliminar la reserva de la base de datos
+        $reserva->delete();
+
+        // Liberar la disponibilidad si es necesario
         $availability = Availability::where('service_id', $reserva->service_id)
             ->where('availability_date', $reserva->reservation_date)
             ->where('start_time', $reserva->start_time)
@@ -95,37 +198,72 @@ class ReservaController extends Controller
             $availability->save();
         }
 
-        return back()->with('success', 'Reserva cancelada y turno liberado.');
+        return back()->with('success', 'Reserva eliminada con éxito.');
     }
 
-    public function getAvailableSlots(Request $request)
-    {
-        \Log::info("Service ID: {$request->service_id}, Date: {$request->reservation_date}");
-    
-        $service = Service::findOrFail($request->service_id);
-        $availableSlots = [];
-    
-        $startTime = Carbon::createFromFormat('H:i:s', $service->working_hours_start);
-        $endTime = Carbon::createFromFormat('H:i:s', $service->working_hours_end);
-        $interval = Carbon::createFromFormat('H:i:s', $service->reservation_intervals);
-    
-        for ($time = $startTime; $time->lt($endTime); $time->addHours($interval->hour)->addMinutes($interval->minute)) {
-            $isAvailable = Availability::where('service_id', $service->id)
-                ->where('availability_date', $request->reservation_date)
-                ->where('start_time', $time->format('H:i:s'))
-                ->where('is_available', true)
-                ->exists();
-    
-            if ($isAvailable) {
-                $availableSlots[] = $time->format('H:i');
-            }
-        }
-    
-        \Log::info("Available Slots: " . json_encode($availableSlots));
-    
-        return response()->json($availableSlots);
-    }
-    
+    public function cancel($id)
+{
+    // Encontrar la reserva
+    $reserva = Reserva::findOrFail($id);
 
+    // Encontrar la disponibilidad asociada a esta reserva
+    $availability = $reserva->availability; // Suponiendo que la relación esté configurada correctamente
+
+    // Actualizar la disponibilidad del turno a disponible
+    if ($availability) {
+        $availability->update(['status' => 'available']); // O 'disponible', según tu estructura
+    }
+
+    // Cancelar la reserva (marcarla como cancelada)
+    $reserva->update(['status' => 'cancelled']);
+
+    return redirect()->route('reservas.index')->with('success', 'Reserva cancelada y turno disponible nuevamente');
 }
 
+
+
+    // Obtener los turnos disponibles por servicio y fecha
+    public function getAvailableSlots(Request $request)
+    {
+        $serviceId = $request->get('service_id');
+        $reservationDate = $request->get('reservation_date');
+
+        // Verifica que el servicio exista
+        $service = Service::find($serviceId);
+        if (!$service) {
+            return response()->json(['error' => 'Servicio no encontrado'], 404);
+        }
+
+        // Obtener disponibilidades predefinidas
+        $availabilities = Availability::where('service_id', $serviceId)
+            ->where('availability_date', $reservationDate)
+            ->where('is_available', true)
+            ->get();
+
+        // Obtener horarios ocupados
+        $occupiedSlots = Reserva::where('service_id', $serviceId)
+            ->where('reservation_date', $reservationDate)
+            ->pluck('start_time')
+            ->toArray();
+
+        // Filtrar horarios disponibles
+        $availableSlots = $availabilities->filter(function ($availability) use ($occupiedSlots) {
+            return !in_array($availability->start_time, $occupiedSlots);
+        })->map(function ($availability) {
+            return $availability->start_time;
+        });
+
+        return response()->json($availableSlots);
+    }
+
+    // Calcular los turnos disponibles para hoy
+    private function getServiceSlotsForToday($service, $date = null)
+    {
+        $date = $date ?: now()->toDateString(); // Usa la fecha proporcionada o la fecha actual
+
+        return Availability::where('service_id', $service->id)
+            ->where('availability_date', $date)
+            ->where('is_available', true)
+            ->pluck('start_time');
+    }
+}

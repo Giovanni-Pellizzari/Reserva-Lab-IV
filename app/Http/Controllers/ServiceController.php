@@ -3,39 +3,52 @@
 namespace App\Http\Controllers;
 
 use App\Models\Service;
-use App\Models\Availability; // Asegúrate de que este modelo esté importado
+use App\Models\Availability;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class ServiceController extends Controller
 {
+    // Método para almacenar un servicio
     public function store(Request $request)
     {
-        \Log::info($request->all()); // Log all incoming data
-    
+        \Log::info($request->all()); // Log de los datos entrantes
+        
+        // Validación de los datos de entrada
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'working_days' => 'required|array',
             'working_days.*' => 'string|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
-            'working_hours_start' => 'required|string',
-            'working_hours_end' => 'required|string',
+            'working_hours_start' => 'required|date_format:H:i',
+            'working_hours_end' => 'required|date_format:H:i',
             'reservation_intervals' => 'required|date_format:H:i',
             'price' => 'required|numeric|min:0',
         ]);
     
+        // Subir la imagen del servicio
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('services', 'public');
+            if (!$imagePath) {
+                return redirect()->back()->with('error', 'Error al cargar la imagen.');
+            }
         } else {
             return redirect()->back()->with('error', 'La imagen es obligatoria.');
         }
     
+        // Verifica si el usuario está autenticado
+        $userId = auth()->id();
+        if (!$userId) {
+            return redirect()->back()->with('error', 'No estás autenticado correctamente.');
+        }
+
+        // Crea el servicio
         $service = Service::create([
             'name' => $validatedData['name'],
             'description' => $validatedData['description'],
             'image' => $imagePath,
-            'user_id' => auth()->id(),
+            'user_id' => $userId,
             'working_days' => json_encode($validatedData['working_days']),
             'working_hours_start' => $validatedData['working_hours_start'],
             'working_hours_end' => $validatedData['working_hours_end'],
@@ -43,61 +56,81 @@ class ServiceController extends Controller
             'price' => $validatedData['price'],
         ]);
     
-        // Calcular y crear los intervalos de disponibilidad
+        // Crear los intervalos de disponibilidad para el servicio
         $this->createAvailabilitySlots($service, $validatedData);
     
         return redirect()->route('services.index')->with('success', 'Servicio creado con éxito.');
     }
     
-    public function createAvailabilitySlots($service)
-    {
-        // Ensure that working hours are valid Carbon instances
-        $start = Carbon::createFromFormat('H:i', $service->working_hours_start);
-        $end = Carbon::createFromFormat('H:i', $service->working_hours_end);
-    
-        // Log the start and end times for debugging
-        \Log::info('Start Time: ' . $start->format('H:i'));
-        \Log::info('End Time: ' . $end->format('H:i'));
-    
-        // Calculate the interval (in minutes) between reservation slots
-        $interval = Carbon::createFromFormat('H:i', $service->reservation_intervals)
-                        ->diffInMinutes(Carbon::createFromFormat('H:i', '00:00'));
-    
-        \Log::info('Interval (in minutes): ' . $interval);
-    
-        // Calculate the number of slots
-        $numberOfSlots = $start->diffInMinutes($end) / $interval;
-    
-        // Now iterate over the working days and create the availability slots
-        foreach (json_decode($service->working_days) as $day) {
-            \Log::info('Working Day: ' . $day);
-    
-            for ($i = 0; $i <= $numberOfSlots; $i++) {
-                $slotTime = clone $start;
-                $slotTime->addMinutes($i * $interval);
-                if ($slotTime->lt($end)) {
-                    // Log the available slots for debugging
-                    \Log::info('Available Slot: ' . $slotTime->format('H:i'));
-    
-                    // Create availability record
-                    Availability::create([
-                        'service_id' => $service->id,
-                        'availability_date' => Carbon::parse($day)->format('Y-m-d'),
-                        'start_time' => $slotTime->format('H:i'),
-                        'end_time' => $slotTime->addMinutes($interval)->format('H:i'),
-                        'is_available' => true,
-                    ]);
-                }
-            }
+    // Función para crear los intervalos de disponibilidad
+   public function createAvailabilitySlots($service, $validatedData)
+{
+    $workingDays = $validatedData['working_days'];
+    $intervalInMinutes = Carbon::parse($service->reservation_intervals)->hour * 60 
+                        + Carbon::parse($service->reservation_intervals)->minute;
+
+    // Mapeo de días en español a inglés
+    $dayMap = [
+        'Lunes' => 'Monday',
+        'Martes' => 'Tuesday',
+        'Miércoles' => 'Wednesday',
+        'Jueves' => 'Thursday',
+        'Viernes' => 'Friday',
+        'Sábado' => 'Saturday',
+        'Domingo' => 'Sunday'
+    ];
+
+    $availabilityCount = 0; // Contador de disponibilidades creadas
+
+    foreach ($workingDays as $day) {
+        $englishDay = $dayMap[$day];  // Convertir el día al formato en inglés
+        $startTime = Carbon::parse($service->working_hours_start);
+        $endTime = Carbon::parse($service->working_hours_end);
+
+        while ($startTime->lt($endTime)) {
+            // Crear una disponibilidad para cada intervalo
+            $availability = new Availability();
+            $availability->service_id = $service->id;
+            $availability->availability_date = Carbon::now()->next($englishDay)->format('Y-m-d');
+            $availability->start_time = $startTime->format('H:i');
+            $availability->end_time = $startTime->copy()->addMinutes($intervalInMinutes)->format('H:i');
+
+            $availability->save();
+
+            // Avanzar al siguiente intervalo
+            $startTime->addMinutes($intervalInMinutes);
+            $availabilityCount++; // Incrementar el contador
         }
     }
 
-    public function index()
+    return "Se crearon $availabilityCount intervalos de disponibilidad.";
+}
+
+
+
+    // Mapear los días de la semana al formato de Carbon
+    private function mapWeekday($day)
     {
-        $services = Service::all(); // Obtener todos los servicios
-        return view('pages.dashboard', compact('services')); // Pasar los servicios a la vista 'dashboard'
+        $daysOfWeek = [
+            'Lunes' => Carbon::MONDAY,
+            'Martes' => Carbon::TUESDAY,
+            'Miércoles' => Carbon::WEDNESDAY,
+            'Jueves' => Carbon::THURSDAY,
+            'Viernes' => Carbon::FRIDAY,
+            'Sábado' => Carbon::SATURDAY,
+            'Domingo' => Carbon::SUNDAY,
+        ];
+        return $daysOfWeek[$day] ?? Carbon::MONDAY;
     }
 
+    // Listar los servicios del usuario autenticado
+    public function index()
+    {
+        $services = Service::where('user_id', auth()->id())->get();
+        return view('pages.dashboard', compact('services'));
+    }
+
+    // Eliminar un servicio
     public function destroy($id)
     {
         $service = Service::findOrFail($id);
@@ -106,34 +139,28 @@ class ServiceController extends Controller
         return redirect()->route('services.index')->with('success', 'Servicio eliminado exitosamente.');
     }
 
+    // Mostrar un servicio específico y sus intervalos
     public function show($serviceId)
     {
         $service = Service::findOrFail($serviceId);
         $interval = Carbon::parse($service->reservation_intervals);
     
-        // Convierte las horas de inicio y fin a instancias de Carbon
         $start = Carbon::createFromFormat('H:i', $service->working_hours_start);
         $end = Carbon::createFromFormat('H:i', $service->working_hours_end);
     
-        // Calcula el tiempo total en minutos
         $totalMinutes = $start->diffInMinutes($end);
+        $intervalMinutes = $interval->hour * 60 + $interval->minute;
+        $numberOfSlots = floor($totalMinutes / $intervalMinutes);
     
-        // Calcula cuántos slots de reserva se pueden crear
-        $numberOfSlots = floor($totalMinutes / $interval->diffInMinutes(Carbon::createFromFormat('H:i', '00:00')));
-    
-        // Genera los horarios disponibles según el intervalo
         $availableSlots = [];
         for ($i = 0; $i < $numberOfSlots; $i++) {
-            $slotTime = clone $start; // Clona el tiempo de inicio para cada slot
-            $slotTime->addMinutes($i * $interval); // Agrega el intervalo de reserva
+            $slotTime = clone $start;
+            $slotTime->addMinutes($i * $intervalMinutes);
             if ($slotTime->lt($end)) {
-                $availableSlots[] = $slotTime->format('H:i'); // Agrega la hora formateada al arreglo
+                $availableSlots[] = $slotTime->format('H:i');
             }
         }
     
-        // Verificar el valor de $availableSlots
-        dd($availableSlots); // Esto te ayudará a verificar si la variable contiene los valores esperados
-    
-        return view('services.show', compact('service', 'availableSlots')); // Asegúrate de que estás pasando la variable a la vista
+        return view('services.show', compact('service', 'availableSlots'));
     }
 }

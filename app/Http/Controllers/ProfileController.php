@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Hash;
+
 
 class ProfileController extends Controller
 {
@@ -35,17 +37,41 @@ class ProfileController extends Controller
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+{
+    // Rellenamos los campos con los datos validados
+    $user = $request->user();
+    $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    // Si el correo electrónico ha cambiado, lo marcamos como no verificado
+    if ($user->isDirty('email')) {
+        $user->email_verified_at = null;
     }
+
+    // Guardamos los cambios en el usuario
+    $user->save();
+
+    // Redirigimos al formulario de edición con un mensaje de éxito
+    return Redirect::route('profile.edit')->with('status', 'profile-updated');
+}
+
+public function updatePassword(Request $request)
+{
+    // Validar las contraseñas
+    $validated = $request->validate([
+        'password' => 'required|confirmed|min:8', // Valida que las contraseñas coincidan y tenga al menos 8 caracteres
+    ]);
+
+    // Obtener al usuario actual
+    $user = Auth::user();
+    
+    // Cambiar la contraseña
+    $user->password = Hash::make($request->password);
+    $user->save();
+
+    // Redirigir con mensaje de éxito
+    return redirect()->route('profile')->with('status', 'Contraseña actualizada exitosamente.');
+}
+
 
     /**
      * Delete the user's account.
