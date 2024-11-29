@@ -3,15 +3,17 @@
 @extends('layouts.app')
 
 @section('content')
+    <div class="card-header text-center ">
+    <h1 class="text-black font-weight-bold">
+        <span class="recuadro-fondo">Editar Perfil</span>
+    </h1>
+</div>
 <div class="container py-5">
+
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white text-center">
-                    <h2 class="font-weight-bold">Editar Perfil</h2>
-                </div>
-
-                <div class="card-body bg-dark">
+            <div class="card">
+                <div class="card-body bg-white">
                     @if (session('status') === 'profile-updated')
                         <div class="alert alert-success">
                             Tu perfil ha sido actualizado.
@@ -23,12 +25,12 @@
                         @method('PUT')
 
                         <div class="mb-3">
-                    <label for="name" class="form-label text-white">Nombre</label>
+                    <label for="name" class="form-label text-black">Nombre</label>
                     <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required class="form-control">
                 </div>
 
                 <div class="mb-3">
-                    <label for="email" class="form-label text-white">Correo Electrónico</label>
+                    <label for="email" class="form-label text-black">Correo Electrónico</label>
                     <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required class="form-control">
                 </div>
                         <div class="d-flex justify-content-between">
@@ -78,19 +80,31 @@
 </div>
 
 <style>
+    /* Fondo general */
     body {
-        background-color: rgb(72, 61, 139); /* Cambia el color de fondo para pruebas */
+            background-color: rgb(2, 65, 82); 
+        }
+
+        .content-wrapper{
+            background-color: rgb(2, 65, 82); 
+        }
+
+    .card-header {
+    display: flex;
+    background-color: rgb(2, 65, 82); 
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+    height: 100px; /* Ajusta la altura según sea necesario */
+    border-bottom: none;
 }
 
-    .card {
-    border-radius: 0px;
-    background: rgb(72, 61, 139);
-}
-
-/* Títulos en el encabezado de la tarjeta */
-.card-header h2 {
-    font-size: 40px ;
-    font-weight: bold;
+.recuadro-fondo {
+    background-color: white; 
+    padding: 10px 20px; /* Espaciado alrededor del texto */
+    border-radius: 30px; /* Bordes redondeados */
+    display: inline-block; /* Asegura que el fondo solo cubra el texto */
+    text-align: center; /* Centra el texto dentro del recuadro */
+    font-family: sans-serif;
 }
 
 /* Ajustar el espacio entre los elementos de la lista */
@@ -118,7 +132,21 @@ h4.text-center {
 
 /* Ajustar márgenes en el contenedor */
 .container {
-    margin-top: 20px;
+    margin-top: 10px;
 }
+
+/* Estilo de los inputs */
+.form-control, .form-control-file {
+        background-color: white;
+        border: 1px solid #ced4da;
+        color: #333333; 
+    }
+
+    /* No cambiar el color del texto cuando se escribe */
+    .form-control:focus {
+        border-color: #007bff;
+        background-color: white;
+        
+    }
 </style>
 @endsection

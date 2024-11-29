@@ -163,6 +163,19 @@ public function update(Request $request, $id)
         return back()->with('error', 'El turno no está disponible.');
     }
 
+    // Liberar la disponibilidad del horario anterior si es necesario
+    if ($reserva->status == 'confirmed') {
+        $oldAvailability = Availability::where('service_id', $reserva->service_id)
+            ->where('availability_date', $reserva->reservation_date)
+            ->where('start_time', $reserva->start_time)
+            ->first();
+
+        if ($oldAvailability) {
+            $oldAvailability->is_available = true;  // Marcar como disponible
+            $oldAvailability->save();
+        }
+    }
+
     // Actualizar la reserva con los nuevos datos
     $endTime = $startTime->copy()->addHour(); // Añadir una hora de duración
     $reserva->update([
@@ -178,6 +191,7 @@ public function update(Request $request, $id)
 
     return redirect()->route('reservas.index')->with('success', 'Reserva actualizada y confirmada con éxito');
 }
+
 
 
     public function destroy($id)
@@ -202,23 +216,26 @@ public function update(Request $request, $id)
     }
 
     public function cancel($id)
-{
-    // Encontrar la reserva
-    $reserva = Reserva::findOrFail($id);
-
-    // Encontrar la disponibilidad asociada a esta reserva
-    $availability = $reserva->availability; // Suponiendo que la relación esté configurada correctamente
-
-    // Actualizar la disponibilidad del turno a disponible
-    if ($availability) {
-        $availability->update(['status' => 'available']); // O 'disponible', según tu estructura
+    {
+        // Encontrar la reserva
+        $reserva = Reserva::findOrFail($id);
+    
+        // Encontrar la disponibilidad asociada a esta reserva
+        $availability = $reserva->availability; // Suponiendo que la relación esté configurada correctamente
+    
+        // Verificar si existe la disponibilidad y actualizarla
+        if ($availability) {
+            $availability->is_available = true; // O 'status' según lo que uses
+            $availability->save();
+        }
+    
+        // Cancelar la reserva (marcarla como cancelada)
+        $reserva->status = 'cancelled';
+        $reserva->save();
+    
+        return redirect()->route('reservas.index')->with('success', 'Reserva cancelada y turno disponible nuevamente');
     }
-
-    // Cancelar la reserva (marcarla como cancelada)
-    $reserva->update(['status' => 'cancelled']);
-
-    return redirect()->route('reservas.index')->with('success', 'Reserva cancelada y turno disponible nuevamente');
-}
+    
 
 
 

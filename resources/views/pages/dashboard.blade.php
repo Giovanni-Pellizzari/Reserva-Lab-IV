@@ -1,188 +1,294 @@
+{{-- resources/views/pages/dashboard.blade.php --}}
+
 @extends('layouts.app')
 
 @section('content')
+<div class="card-header text-center">
+    <h1 class="text-black font-weight-bold">
+        <span class="recuadro-fondo">Bienvenido al Dashboard</span>
+    </h1> 
+</div>
 <div class="container">
-    <h1 class="text-center">Bienvenido al Dashboard</h1>
-    <p class="text-center">Crea un servicio Aqui!</p>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="mb-5">
+            </div>
+        </div>
+    </div>
 
     <!-- Formulario para crear un nuevo servicio -->
-    <div class="mb-4">
-        <h4>Crear Nuevo Servicio</h4>
-        <form action="{{ route('services.store') }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <div class="form-group">
-                <label for="name">Nombre del Servicio</label>
-                <input type="text" class="form-control" id="name" name="name" required>
+    <div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card bg-white text-black mb-4">
+            <div class="card-header text-center bg-light">
+                <h4 class="text-dark">Crear Nuevo Servicio</h4>
             </div>
-            <div class="form-group">
-    <label for="description">Descripción</label>
-    <textarea class="form-control" id="description" name="description" required></textarea>
-
+            <div class="card-body">
+                <form action="{{ route('services.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="form-group">
+                        <label for="name">Nombre del Servicio</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Imagen</label>
+                        <input type="file" class="form-control-file" id="image" name="image" accept="image/*" required>
+                    </div>
+                    <!-- Campos de días de trabajo, horarios, intervalos y precio -->
+                    <div class="form-group">
+                        <label for="working_days">Días de Trabajo</label><br>
+                        @foreach (['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] as $day)
+                            <div class="form-check form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="{{ strtolower($day) }}" name="working_days[]" value="{{ $day }}">
+                                <label class="form-check-label" for="{{ strtolower($day) }}">{{ $day }}</label>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="form-group">
+                        <label for="working_hours_start">Horario de Inicio</label>
+                        <input type="time" class="form-control" id="working_hours_start" name="working_hours_start" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="working_hours_end">Horario de Fin</label>
+                        <input type="time" class="form-control" id="working_hours_end" name="working_hours_end" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reservation_intervals">Intervalo de Reserva (HH:MM)</label>
+                        <input type="time" class="form-control" id="reservation_intervals" name="reservation_intervals" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Precio</label>
+                        <input type="number" class="form-control" id="price" name="price" required min="0" step="0.01">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Crear Servicio</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
-            <div class="form-group">
-                <label for="image">Imagen</label>
-                <input type="file" class="form-control-file" id="image" name="image" accept="image/*" required>
-            </div>
-            <div class="form-group">
-                <label for="working_days">Días de Trabajo</label><br>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="lunes" name="working_days[]" value="Lunes">
-                    <label class="form-check-label" for="lunes">Lunes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="martes" name="working_days[]" value="Martes">
-                    <label class="form-check-label" for="martes">Martes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="miercoles" name="working_days[]" value="Miércoles">
-                    <label class="form-check-label" for="miercoles">Miércoles</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="jueves" name="working_days[]" value="Jueves">
-                    <label class="form-check-label" for="jueves">Jueves</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="viernes" name="working_days[]" value="Viernes">
-                    <label class="form-check-label" for="viernes">Viernes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="sabado" name="working_days[]" value="Sábado">
-                    <label class="form-check-label" for="sabado">Sábado</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="domingo" name="working_days[]" value="Domingo">
-                    <label class="form-check-label" for="domingo">Domingo</label>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="working_hours_start">Horario de Inicio</label>
-                <input type="time" class="form-control" id="working_hours_start" name="working_hours_start" required>
-            </div>
-            <div class="form-group">
-                <label for="working_hours_end">Horario de Fin</label>
-                <input type="time" class="form-control" id="working_hours_end" name="working_hours_end" required>
-            </div>
-            <div class="form-group">
-                <label for="reservation_intervals">Intervalo de Reserva (HH:MM)</label>
-                <input type="time" class="form-control" id="reservation_intervals" name="reservation_intervals" required>
-            </div>
-            <div class="form-group">
-                <label for="price">Precio</label>
-                <input type="number" class="form-control" id="price" name="price" required min="0" step="0.01">
-            </div>
-            <button type="submit" class="btn btn-primary">Crear Servicio</button>
-        </form>
+
+    <div class="card-Mis-servicios text-center mb-4">
+        <h2 class="text-white font-weight-bold">Mis Servicios</h2>
     </div>
 
     <!-- Listado de Servicios -->
-    @forelse ($services ?? [] as $service)
-        <li class="list-group-item bg-dark text-white mb-3">
-            <div class="border p-3">
-                <strong>{{ $service->name }}</strong>
-                <div class="mt-2">{{ $service->description }}</div>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            @forelse ($services ?? [] as $service)
+                <div class="card bg-white text-black mb-3">
+                    <div class="card-body">
+                        <h4 class="card-title text-black">{{ $service->name }}</h4>
+                        <p class="card-text">{{ $service->description }}</p>
 
-                @if ($service->image)
-                    <div class="mt-2">
-                        <img src="{{ asset('storage/' . $service->image) }}" alt="{{ $service->name }}" style="width: 100px; height: auto;">
+                        @if ($service->image)
+                            <div class="mt-2">
+                                <img src="{{ asset('storage/' . $service->image) }}" alt="{{ $service->name }}" class="img-thumbnail" style="width: 100px; height: auto;">
+                            </div>
+                        @else
+                            <p class="text-muted mt-2">No hay imagen disponible.</p>
+                        @endif
+
+                        <div class="mt-2">
+                            <strong>Días de Trabajo:</strong>
+                            <ul>
+                                @foreach (json_decode($service->working_days) as $day)
+                                    <li>{{ $day }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+
+                        <div class="mt-2">
+                            <strong>Horario de Trabajo:</strong>
+                            {{ $service->working_hours_start }} - {{ $service->working_hours_end }}
+                        </div>
+
+                        <div class="mt-2">
+                            <strong>Intervalo de Reservas:</strong>
+                            {{ $service->reservation_intervals }} hs
+                        </div>
+
+                        <div class="mt-2">
+                            <strong>Precio:</strong>
+                            ${{ number_format($service->price, 2) }}
+                        </div>
+
+                        <div class="text-right mt-3">
+                            <form action="{{ route('services.destroy', $service->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este servicio?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                            </form>
+                        </div>
                     </div>
-                @else
-                    <div class="mt-2">No hay imagen disponible.</div>
-                @endif
-
-                <div class="mt-2">
-                    <strong>Días de Trabajo:</strong>
-                    @if ($service->working_days)
-                        <ul>
-                            @foreach (json_decode($service->working_days) as $day)
-                                <li>{{ $day }}</li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <p>No se han especificado días de trabajo.</p>
-                    @endif
                 </div>
-
-                <div class="mt-2">
-                    <strong>Horario de Trabajo:</strong>
-                    @if ($service->working_hours_start && $service->working_hours_end)
-                        {{ $service->working_hours_start }} - {{ $service->working_hours_end }}
-                    @else
-                        <p>No se ha especificado horario de trabajo.</p>
-                    @endif
+            @empty
+                <div class="alert alert-warning text-center">
+                    No tienes servicios creados.
                 </div>
-
-                <div class="mt-2">
-                    <strong>Intervalo de Reservas:</strong>
-                    @if ($service->reservation_intervals)
-                        {{ $service->reservation_intervals }} hs
-                    @else
-                        <p>No se ha especificado intervalo de reservas.</p>
-                    @endif
-                </div>
-
-                <div class="mt-2">
-                    <strong>Precio:</strong>
-                    @if ($service->price)
-                        ${{ number_format($service->price, 2) }}
-                    @else
-                        <p>No se ha especificado precio.</p>
-                    @endif
-                </div>
-
-                <div class="text-right mt-3">
-                    <form action="{{ route('services.destroy', $service->id) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de que deseas eliminar este servicio?');">Eliminar</button>
-                    </form>
-                </div>
-            </div>
-        </li>
-    @empty
-        <li class="list-group-item bg-dark text-white">No tienes servicios creados.</li>
-    @endforelse
-</div>
-
+            @endforelse
+        </div>
+    
 <style>
-    body {
-        background-color: rgb(72, 61, 139); /* Color de fondo suave */
-    }
 
-    .container {
-        margin-top: 50px; /* Espaciado superior */
+body {
+            background-color: rgb(2, 65, 82); 
+        }
+
+        .content-wrapper{
+            background-color: rgb(2, 65, 82); 
+        }
+
+.card-header {
+    margin-top: 0px;
+    display: flex;
+    background-color: rgb(2, 65, 82); 
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+    height: 100px; /* Ajusta la altura según sea necesario */
+    border-bottom: none;
+}
+
+.recuadro-fondo {
+    background-color: white; 
+    padding: 10px 20px; /* Espaciado alrededor del texto */
+    border-radius: 30px; /* Bordes redondeados */
+    display: inline-block; /* Asegura que el fondo solo cubra el texto */
+    text-align: center; /* Centra el texto dentro del recuadro */
+    font-family: sans-serif;
+}
+
+    /* Contenedor principal para la página */
+    .dashboard-container {
+        max-width: 900px;
+        margin: auto;
+        background-color: #ffffff;
+        color: #333333;
         padding: 20px;
-        background-color: #0d0d0d; /* Fondo oscuro para el contenedor */
-        border: 2px solid rgb(72, 61, 139); /* Borde fino del color del fondo de la página */
-        border-radius: 0px; /* Esquinas redondeadas */
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
     }
 
-    h1 {
-        color: white; /* Color del título principal */
-        margin-top: 20px; /* Margen superior adicional */
+    /* Títulos de la página */
+    .dashboard-container h1,
+    .dashboard-container h4,
+    .dashboard-container p {
+        color: #333333;
     }
 
-    h4 {
-        margin-top: 40px; /* Espaciado superior para subtítulos */
-        color: white; /* Color para subtítulos */
+    /* Ajuste de los títulos */
+    .dashboard-container h1 {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 20px;
     }
 
-    .list-group-item {
-        background-color: #343a40; /* Fondo oscuro para los elementos de la lista */
-        color: #fff; /* Color del texto blanco */
+    /* Estilos del formulario */
+    .form-group {
+        margin-bottom: 20px;
     }
 
-    .border {
-        border: 1px solid #fff; /* Borde blanco alrededor de cada servicio */
-        border-radius: 5px; /* Esquinas redondeadas */
+    .form-group label {
+        font-weight: bold;
+        color: #333333;
     }
 
-    .mb-3 {
-        margin-bottom: 1rem; /* Margen inferior para separar los servicios */
+    /* Estilo de los inputs */
+    .form-control, .form-control-file {
+        background-color: white;
+        border: 1px solid #ced4da;
+        color: #333333; 
+    }
+
+    /* No cambiar el color del texto cuando se escribe */
+    .form-control:focus {
+        border-color: #007bff;
+        background-color: white;
+        
     }
 
     .btn-primary {
-        margin-top: 10px; /* Margen superior para el botón */
+        background-color: #007bff;
+        border-color: #007bff;
+        transition: background-color 0.3s ease;
     }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    /* Estilo de las tarjetas de servicios */
+    .service-card {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .service-card strong {
+        font-size: 20px;
+        color: #333333 !important;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    /* Estilo para las imágenes dentro de las tarjetas */
+    .service-card img {
+        width: 120px;
+        height: auto;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+
+    /* Estilo de los detalles dentro de las tarjetas */
+    .service-card .service-details {
+        margin-top: 15px;
+        color: #666666;
+    }
+
+    .service-card .service-details strong {
+        color: #333333;
+    }
+
+    .service-card .service-details ul {
+        list-style-type: disc;
+        padding-left: 20px;
+    }
+
+    .service-card .service-details p {
+        margin: 5px 0;
+    }
+
+    /* Botón de eliminar */
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+
+    footer {
+    position: relative;
+    width: 100%; /* Asegura que ocupe el 100% del ancho */
+    background-color: #333; /* Color de fondo opcional */
+    color: white; /* Color de texto opcional */
+    padding: 20px 0; /* Ajusta el espacio vertical */
+    bottom: 0;
+}
 </style>
+
 @endsection

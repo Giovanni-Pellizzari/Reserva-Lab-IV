@@ -1,3 +1,29 @@
+Instrucciones para el uso:
+
+Paso 1: Clonar el repositorio.  
+
+Paso 2: Agregue la carpeta .env o cree una usando .env.example y cambie los parámetros para que todo esté correctamente configurado.
+
+Paso 3: Abrir una terminal en el proyecto desde Visual Studio Code y escriba los siguientes comandos en orden:
+composer install
+npm install
+npm run build
+
+Paso 4: Utilice XAMPP para hostear localmente la aplicacion web
+
+Paso 5: Ejecute las migraciones con el comando: php artisan migrate  
+(En este paso le preguntará si desea crear la base de datos y tendrá que escribir "yes").
+
+Paso 6: Para que las imágenes carguen correctamente al crear un servicio escriba el siguiente comando: php artisan storage:link  
+
+Si esto no funciona, utilice los siguientes comandos en orden:  
+rm public\storage  
+php artisan storage:link
+
+
+
+
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
